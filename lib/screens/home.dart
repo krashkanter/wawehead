@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:wawehead/screens/player_page.dart';
+import 'package:wawehead/screens/playlist_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -74,8 +75,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: PlayerPage(),
+            ),Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: PlaylistPage(),
             ),
-            Scaffold(),
           ][currentPageIndex]),
     );
   }
