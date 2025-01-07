@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:wawehead/screens/player_page.dart';
-import 'package:wawehead/screens/playlist_page.dart';
+import 'package:wawehead/screens/library_page.dart';
+
+import 'db_view.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,16 +27,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return DecoratedBox(
       decoration: BoxDecoration(
           gradient: RadialGradient(
-              colors: [Colors.white, Colors.blue],
-              center: Alignment.topRight,
-              radius: 4)),
+        colors: [Colors.white, Colors.blue],
+        center: Alignment.topRight,
+        radius: 4,
+        stops: [.2, 1],
+      )),
       child: Scaffold(
           appBar: AppBar(
             actions: [
               IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => DbView()));
+                  },
                   icon: Icon(
-                    Icons.settings,
+                    Icons.dataset_rounded,
                     color: Colors.black87,
                   ))
             ],
@@ -67,17 +74,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               NavigationDestination(
                   icon: Icon(Icons.music_note), label: "Player"),
               NavigationDestination(
-                  icon: Icon(Icons.featured_play_list_rounded),
-                  label: "Playlist"),
+                  icon: Icon(Icons.library_music_rounded), label: "Library"),
             ],
           ),
           body: <Widget>[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: PlayerPage(),
-            ),Padding(
+            ),
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: PlaylistPage(),
+              child: LibraryPage(),
             ),
           ][currentPageIndex]),
     );
