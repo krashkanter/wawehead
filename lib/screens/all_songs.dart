@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:wawehead/components/audiotagger.dart';
 import 'package:wawehead/screens/home.dart';
 import 'package:wawehead/screens/player.dart';
 
@@ -17,6 +18,7 @@ class _AllSongsState extends State<AllSongs> {
   final List<Map<String, String>> _musicFiles =
       []; // List to store music file data
   bool _isLoading = true; // Track loading state
+
 
   @override
   void initState() {
@@ -35,6 +37,7 @@ class _AllSongsState extends State<AllSongs> {
         for (var uri in musicFiles!.childrenUriList.sublist(1)) {
           final decodedFileName = _getCleanFileName(uri.toString());
           _musicFiles.add({'uri': uri.toString(), 'name': decodedFileName});
+          getTag(uri.toString());
         }
       }
 
@@ -70,8 +73,13 @@ class _AllSongsState extends State<AllSongs> {
                   itemBuilder: (BuildContext context, int index) {
                     final file = _musicFiles[index];
                     return ListTile(
-                      leading: Icon(Icons.music_note_rounded),
-                      title: Text(file['name']!),
+                      leading: Icon(
+                        Icons.music_note_rounded,
+                        color: Colors.blue.shade50,
+                      ),
+                      title: Text(
+                        file["name"]!,
+                      ),
                       onTap: () {
                         final uri = file["uri"]!;
                         Navigator.pushReplacement(

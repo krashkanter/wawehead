@@ -24,6 +24,7 @@ class _PlayerPageState extends State<PlayerPage>
     plr = AudioPlayer(); // Initialize only once
     if (widget.uri != null) {
       _startPlaying(widget.uri);
+      songName = _getCleanFileName(widget.uri.toString());
     }
   }
 
@@ -41,13 +42,12 @@ class _PlayerPageState extends State<PlayerPage>
       await plr.setUrl(uri.toString());
       await plr.play();
       setState(() {
-        songName = ""; // Set the song name if available
+        // songName = uri.toString(); // Set the song name if available
       });
     } catch (e) {
-      print("Error playing audio: $e");
+      // print("Error playing audio: $e");
     }
   }
-
 
   @override
   void dispose() {
@@ -57,11 +57,13 @@ class _PlayerPageState extends State<PlayerPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: ListView(
+      body: Stack(
         children: [
-          Center(
+          Align(
+            alignment: Alignment.topCenter,
             child: Padding(
               padding: const EdgeInsets.only(top: 24.0),
               child: ClipRRect(
@@ -83,121 +85,129 @@ class _PlayerPageState extends State<PlayerPage>
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      repeatState = (repeatState + 1) % 3;
-                      plr.setLoopMode(LoopMode.values[repeatState]);
-                    });
-                  },
-                  icon: repeatState == 0
-                      ? Icon(
-                          Icons.repeat_rounded,
-                          color: Colors.black87,
-                        )
-                      : repeatState == 1
-                          ? Icon(
-                              Icons.repeat_on_rounded,
-                              color: Colors.black87,
-                            )
-                          : Icon(
-                              Icons.repeat_one_on_rounded,
-                              color: Colors.black87,
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12.0, left: 10, right: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      StreamBuilder<Duration>(
+                        stream: plr.positionStream,
+                        builder: (context, snapshot) {
+                          final position = snapshot.data ?? Duration.zero;
+                          final duration = plr.duration ?? Duration.zero;
+                          final buffer = plr.bufferedPosition;
+                          return Expanded(
+                            child: Slider(
+                              value: position.inSeconds.toDouble(),
+                              secondaryTrackValue: buffer.inSeconds.toDouble(),
+                              max: duration.inSeconds.toDouble(),
+                              activeColor: Colors.blue.shade50,
+                              inactiveColor: Colors.black,
+                              onChanged: (double value) {
+                                plr.seek(Duration(seconds: value.toInt()));
+                              },
                             ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    plr.seek(Duration.zero);
-                  },
-                  icon: Icon(
-                    Icons.fast_rewind_rounded,
-                    color: Colors.black87,
+                          );
+                        },
+                      ),
+                      IconButton(onPressed: () {}, icon: Icon(Icons.thumb_up_alt_rounded, color: Colors.blue.shade50,))
+                    ],
                   ),
-                ),
-                StreamBuilder<PlayerState>(
-                  stream: plr.playerStateStream,
-                  builder: (context, snapshot) {
-                    final playerState = snapshot.data;
-                    final playing = playerState?.playing ?? false;
-
-                    return IconButton(
-                      onPressed: () async {
-                        if (playing) {
-                          await plr.pause();
-                        } else {
-                          await plr.play();
-                        }
-                      },
-                      icon: playing
-                          ? Icon(
-                              Icons.pause_circle_filled_rounded,
-                              size: 64,
-                              color: Colors.black87,
-                            )
-                          : Icon(
-                              Icons.play_circle_fill_rounded,
-                              size: 64,
-                              color: Colors.black87,
-                            ),
-                    );
-                  },
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(
-                    Icons.fast_forward_rounded,
-                    color: Colors.black87,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      shuffleState = !shuffleState;
-                      plr.setShuffleModeEnabled(shuffleState);
-                    });
-                  },
-                  icon: shuffleState
-                      ? Icon(
-                          Icons.shuffle_on_rounded,
-                          color: Colors.black87,
-                        )
-                      : Icon(
-                          Icons.shuffle_rounded,
-                          color: Colors.black87,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            repeatState = (repeatState + 1) % 3;
+                            plr.setLoopMode(LoopMode.values[repeatState]);
+                          });
+                        },
+                        icon: repeatState == 0
+                            ? Icon(
+                                Icons.repeat_rounded,
+                                color: Colors.blue.shade50,
+                              )
+                            : repeatState == 1
+                                ? Icon(
+                                    Icons.repeat_on_rounded,
+                                    color: Colors.blue.shade50,
+                                  )
+                                : Icon(
+                                    Icons.repeat_one_on_rounded,
+                                    color: Colors.blue.shade50,
+                                  ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          plr.seek(Duration.zero);
+                        },
+                        icon: Icon(
+                          Icons.fast_rewind_rounded,
+                          color: Colors.blue.shade50,
                         ),
-                ),
-              ],
-            ),
-          ),
-          StreamBuilder<Duration>(
-            stream: plr.positionStream,
-            builder: (context, snapshot) {
-              final position = snapshot.data ?? Duration.zero;
-              final duration = plr.duration ?? Duration.zero;
-              final buffer = plr.bufferedPosition;
-              return Slider(
-                value: position.inSeconds.toDouble(),
-                secondaryTrackValue: buffer.inSeconds.toDouble(),
-                max: duration.inSeconds.toDouble(),
-                activeColor: Colors.black87,
-                inactiveColor: Colors.white60,
-                onChanged: (double value) {
-                  plr.seek(Duration(seconds: value.toInt()));
-                },
-              );
-            },
-          ),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
-            child: Text(
-              "Queue",
-              style: TextStyle(fontSize: 32),
+                      ),
+                      StreamBuilder<PlayerState>(
+                        stream: plr.playerStateStream,
+                        builder: (context, snapshot) {
+                          final playerState = snapshot.data;
+                          final playing = playerState?.playing ?? false;
+
+                          return IconButton(
+                            onPressed: () async {
+                              if (playing) {
+                                await plr.pause();
+                              } else {
+                                await plr.play();
+                              }
+                            },
+                            icon: playing
+                                ? Icon(
+                                    Icons.pause_circle_filled_rounded,
+                                    size: 64,
+                                    color: Colors.blue.shade50,
+                                  )
+                                : Icon(
+                                    Icons.play_circle_fill_rounded,
+                                    size: 64,
+                                    color: Colors.blue.shade50,
+                                  ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.fast_forward_rounded,
+                          color: Colors.blue.shade50,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            shuffleState = !shuffleState;
+                            plr.setShuffleModeEnabled(shuffleState);
+                          });
+                        },
+                        icon: shuffleState
+                            ? Icon(
+                                Icons.shuffle_on_rounded,
+                                color: Colors.blue.shade50,
+                              )
+                            : Icon(
+                                Icons.shuffle_rounded,
+                                color: Colors.blue.shade50,
+                              ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -207,4 +217,10 @@ class _PlayerPageState extends State<PlayerPage>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+String _getCleanFileName(String uri) {
+  // Decode URI and extract the last part as the file name
+  final decodedUri = Uri.decodeComponent(uri.substring(0, uri.length - 4));
+  return decodedUri.split('/').last;
 }

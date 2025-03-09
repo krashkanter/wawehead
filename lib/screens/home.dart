@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:wawehead/main.dart';
@@ -29,7 +30,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: RadialGradient(
-          colors: [Colors.white, Colors.blue],
+          colors: [Colors.black, Colors.blue],
           center: Alignment.topRight,
           radius: 4,
           stops: [.2, 1],
@@ -40,12 +41,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           actions: [
             IconButton(
               onPressed: () async {
-                final musicFiles = await mediaStorePlugin.requestForAccess(initialRelativePath: "");
-                print(musicFiles?.childrenUriList);
+                final musicFiles = await mediaStorePlugin.requestForAccess(
+                    initialRelativePath: "");
+                if (kDebugMode) {
+                  print(musicFiles?.childrenUriList);
+                }
               },
-              icon: const Icon(
+              icon: Icon(
                 Icons.refresh_rounded,
-                color: Colors.black87,
+                color: Colors.blue.shade50,
               ),
             ),
             IconButton(
@@ -55,21 +59,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   MaterialPageRoute(builder: (context) => DbView()),
                 );
               },
-              icon: const Icon(
+              icon: Icon(
                 Icons.dataset_rounded,
-                color: Colors.black87,
+                color: Colors.blue.shade50,
               ),
             ),
           ],
           backgroundColor: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           centerTitle: false,
-          title: const Text(
+          title: Text(
             'wawehead',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.blue.shade50,
             ),
           ),
         ),
@@ -83,13 +87,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.music_note),
+              icon: Icon(
+                Icons.music_note,
+                color: Colors.blue.shade50,
+              ),
               label: "Player",
             ),
             NavigationDestination(
-              icon: Icon(Icons.library_music_rounded),
+              icon: Icon(
+                Icons.library_music_rounded,
+                color: Colors.blue.shade50,
+              ),
               label: "Library",
             ),
           ],

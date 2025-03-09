@@ -10,8 +10,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:wawehead/screens/home.dart';
 
-import 'components/audio.dart';
-
 final mediaStorePlugin = MediaStore();
 
 Future<void> main() async {
@@ -35,21 +33,10 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  // Audio();
-
   await Hive.initFlutter();
-  // await Hive.openBox<String>('link');
-  // await Hive.openBox<int>('bookProgress');
+
   await Hive.openBox<int>('homePage');
   await Hive.openBox<String>('playerPage');
-
-  // _audioHandler = await AudioService.init(
-  //   builder: () => MyAudioHandler(),
-  //   config: AudioServiceConfig(
-  //     androidNotificationChannelId: 'com.krashkanter.wawehead.channel.audio',
-  //     androidNotificationChannelName: 'Music playback',
-  //   ),
-  // );
 
   runApp(const MyApp());
 }
@@ -63,13 +50,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorSchemeSeed: Colors.blue,
-        brightness: Brightness.light,
+        brightness: Brightness.dark,
         fontFamily: GoogleFonts.laila().fontFamily,
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            selectedItemColor: Colors.black,
-            unselectedItemColor: Colors.black.withValues(alpha: 0.6),
-            showUnselectedLabels: false,
-            showSelectedLabels: false),
+        navigationBarTheme: NavigationBarThemeData(
+          labelTextStyle:
+              WidgetStatePropertyAll(TextStyle(color: Colors.blue.shade50)),
+          indicatorColor: Colors.black,
+        ),
         dividerTheme: const DividerThemeData(color: Colors.transparent),
       ),
       home: HomePage(),
