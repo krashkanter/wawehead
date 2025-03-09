@@ -21,9 +21,6 @@ class _LibraryPageState extends State<LibraryPage>
   void initState() {
     super.initState();
     _tabController = TabController(initialIndex: 0, length: 4, vsync: this);
-    // MediaStore().isFileUriExist(uriString: uriString)
-    // MediaStore().requestForAccess(initialRelativePath: "Music");
-    // songName = Hive.box<String>('playerPage').get(0) ?? "";
   }
 
   @override

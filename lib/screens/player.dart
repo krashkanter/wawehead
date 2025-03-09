@@ -1,14 +1,13 @@
-import 'dart:typed_data';
-
 import "package:flutter/material.dart";
-import 'package:hive_flutter/adapters.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:wawehead/components/metadata.dart';
+
+import '../components/db.dart';
 
 class PlayerPage extends StatefulWidget {
   final String? uri;
+  final int? id;
 
-  const PlayerPage({super.key, this.uri});
+  const PlayerPage({super.key, this.id, this.uri});
 
   @override
   State<PlayerPage> createState() => _PlayerPageState();
@@ -20,19 +19,27 @@ class _PlayerPageState extends State<PlayerPage>
   bool shuffleState = false;
   bool likeState = false;
   bool repeatState = false;
-  // Uint8List? albumArt;
+
+  final DBMS dbms = DBMS();
   late var plr = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
+    isFav();
     plr = AudioPlayer(); // Initialize only once
     if (widget.uri != null) {
       _startPlaying(widget.uri);
       songName = _getCleanFileName(widget.uri.toString());
     }
-    // loadAlbumArt();
-    // repeatState = Hive.box<bool>('repeatState').get('repeatState')!;
+  }
+
+  Future<void> isFav() async {
+    if (widget.id == null) return; // Prevent null errors
+    bool isFavorite = await dbms.isFavorite(widget.id!);
+    setState(() {
+      likeState = isFavorite;
+    });
   }
 
   Future<void> _startPlaying(String? uri) async {
@@ -43,25 +50,12 @@ class _PlayerPageState extends State<PlayerPage>
       }
       await plr.setUrl(uri.toString());
       await plr.play();
-      setState(() {
-        // songName = uri.toString(); // Set the song name if available
-      });
-    } catch (e) {
-      // print("Error playing audio: $e");
-    }
+    } catch (_) {}
   }
-
-  // Future<void> loadAlbumArt() async {
-  //   Uint8List? picture = await getArt(widget.uri.toString());
-  //   setState(() {
-  //     albumArt = picture;
-  //   });
-  // }
 
   @override
   void dispose() {
     plr.dispose(); // Dispose of the player when the widget is destroyed
-    // Hive.box<bool>('repeatState').put('repeatState', repeatState);
     super.dispose();
   }
 
@@ -78,13 +72,11 @@ class _PlayerPageState extends State<PlayerPage>
               padding: const EdgeInsets.only(top: 24.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(32),
-                child: /*albumArt != null
-                    ? Image.memory(albumArt!)*/
-                /*:*/ Image.asset(
-                        "assets/icon/icon.png",
-                        fit: BoxFit.cover,
-                        height: MediaQuery.sizeOf(context).height / 3,
-                      ),
+                child: Image.asset(
+                  "assets/icon/icon.png",
+                  fit: BoxFit.cover,
+                  height: MediaQuery.sizeOf(context).height / 3,
+                ),
               ),
             ),
           ),

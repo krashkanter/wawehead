@@ -15,7 +15,6 @@ Future<String> getTitle(String filePath) async {
 Future<Uint8List?> getArt(String filePath) async {
   File track = await toFile(filePath);
   final metadata = readMetadata(track);
-  print("ASINDPOAUDBFOIUBSDVLBSDVBHSLB ${metadata.pictures.length}");
   if (metadata.pictures.isNotEmpty) {
     return metadata.pictures[0].bytes; // Extract Uint8List
   }
@@ -27,4 +26,11 @@ Future<String> getArtist(String filePath) async {
   final metadata = readMetadata(track);
 
   return metadata.artist!;
+}
+
+Future<int> getDuration(String filePath) async {
+  File track = await toFile(filePath);
+  final metadata = readMetadata(track);
+
+  return metadata.duration?.inSeconds ?? 0;
 }

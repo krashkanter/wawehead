@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:wawehead/components/metadata.dart';
 
 import '../main.dart';
 import 'db.dart';
@@ -52,7 +53,7 @@ Future<void> importMusicFilesToDatabase() async {
     try {
       final String uri = musicFile['uri'] ?? '';
       final String name = musicFile['name'] ?? 'Unknown';
-
+      final duration = await getDuration(uri) ?? 0;
       // Create a default artist entry if we don't have metadata yet
       final defaultArtistId =
           await dbms.insertArtist(Artist(name: 'Unknown Artist'));
@@ -70,7 +71,7 @@ Future<void> importMusicFilesToDatabase() async {
         title: name,
         artistId: defaultArtistId,
         albumId: defaultAlbumId,
-        duration: 0,
+        duration: duration,
         // We'll update this with metadata later
         path: uri,
         size: 0,

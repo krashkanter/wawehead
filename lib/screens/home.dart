@@ -10,8 +10,9 @@ import 'db_view.dart';
 
 class HomePage extends StatefulWidget {
   final String? uri;
+  final int? id;
 
-  const HomePage({super.key, this.uri});
+  const HomePage({super.key, this.id, this.uri});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -112,7 +113,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: PlayerPage(uri: widget.uri),
+              child: PlayerPage(id: widget.id, uri: widget.uri),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),

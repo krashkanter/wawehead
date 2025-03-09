@@ -58,6 +58,10 @@ class MyApp extends StatelessWidget {
               WidgetStatePropertyAll(TextStyle(color: Colors.blue.shade50)),
           indicatorColor: Colors.black,
         ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.blue.shade50,
+        ),
         dividerTheme: const DividerThemeData(color: Colors.transparent),
       ),
       home: HomePage(),

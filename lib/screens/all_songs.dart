@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:wawehead/components/db.dart';
 import 'package:wawehead/screens/home.dart';
-
-import '../main.dart';
 
 class AllSongs extends StatefulWidget {
   const AllSongs({super.key});
@@ -12,47 +10,22 @@ class AllSongs extends StatefulWidget {
 }
 
 class _AllSongsState extends State<AllSongs> {
-  final List<Map<String, String>> _musicFiles =
-      []; // List to store music file data
+  final List<Song> _musicFiles = []; // List to store music file data
+  final DBMS dbms = DBMS();
   bool _isLoading = true; // Track loading state
 
   @override
   void initState() {
     super.initState();
-    _fetchMusicFiles();
+    loadSongs();
   }
 
-  Future<void> _fetchMusicFiles() async {
-    try {
-      final musicFiles = await mediaStorePlugin.getDocumentTree(
-        uriString:
-            "content://com.android.externalstorage.documents/tree/primary%3AMusic/",
-      );
-
-      if (musicFiles?.childrenUriList != null) {
-        for (var uri in musicFiles!.childrenUriList.sublist(1)) {
-          final decodedFileName = _getCleanFileName(uri.toString());
-          _musicFiles.add({'uri': uri.toString(), 'name': decodedFileName});
-        }
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error fetching music files: $e");
-      }
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _getCleanFileName(String uri) {
-    // Decode URI and extract the last part as the file name
-    final decodedUri = Uri.decodeComponent(uri.substring(0, uri.length - 4));
-    return decodedUri.split('/').last;
+  Future<void> loadSongs() async {
+    final songList = await dbms.getSongs();
+    setState(() {
+      _musicFiles.addAll(songList);
+      _isLoading = false;
+    });
   }
 
   @override
@@ -70,17 +43,16 @@ class _AllSongsState extends State<AllSongs> {
               : ListView.builder(
                   itemCount: _musicFiles.length,
                   itemBuilder: (BuildContext context, int index) {
-                    final file = _musicFiles[index];
                     return ListTile(
                       leading: Icon(
                         Icons.music_note_rounded,
                         color: Colors.blue.shade50,
                       ),
                       title: Text(
-                        file["name"]!,
+                        _musicFiles.elementAt(index).title,
                       ),
                       onTap: () {
-                        final uri = file["uri"]!;
+                        final uri = _musicFiles.elementAt(index).path;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

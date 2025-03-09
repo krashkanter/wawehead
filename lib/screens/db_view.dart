@@ -1,8 +1,9 @@
 import "package:flutter/material.dart";
 import "package:wawehead/components/db.dart";
+import "package:wawehead/screens/query.dart";
 
 class DbView extends StatefulWidget {
-  const DbView({Key? key}) : super(key: key);
+  const DbView({super.key});
 
   @override
   State<DbView> createState() => _DbViewState();
@@ -85,7 +86,7 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
   // Mock data creation for testing
   Future<void> addMockSong() async {
     final artistId =
-    await dbms.insertArtist(Artist(name: 'Artist ${artists.length + 1}'));
+        await dbms.insertArtist(Artist(name: 'Artist ${artists.length + 1}'));
     final albumId = await dbms.insertAlbum(Album(
       title: 'Album ${albums.length + 1}',
       artistId: artistId,
@@ -95,7 +96,8 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
       title: 'Song ${songs.length + 1}',
       artistId: artistId,
       albumId: albumId,
-      duration: 180, // 3 minutes
+      duration: 180,
+      // 3 minutes
       path: '/path/to/song${songs.length + 1}.mp3',
       size: 5000000, // 5MB
     ));
@@ -183,6 +185,17 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
             dividerColor: Colors.transparent,
           ),
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => QueryBuilderPage(),
+              ),
+            );
+          },
+          child: Icon(Icons.code_rounded),
+        ),
         body: TabBarView(
           controller: _tabController,
           children: [
@@ -205,6 +218,7 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                         DataColumn(label: Text("ID")),
                         DataColumn(label: Text("Title")),
                         DataColumn(label: Text("Duration")),
+                        DataColumn(label: Text("Path")),
                         DataColumn(label: Text("Actions")),
                       ],
                       rowBuilder: (songList) => songList.map((song) {
@@ -213,6 +227,7 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                           DataCell(Text(song.title)),
                           DataCell(Text(
                               "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
+                          DataCell(Text(song.path)),
                           DataCell(Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -326,7 +341,8 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                         DataColumn(label: Text("ID")),
                         DataColumn(label: Text("Name")),
                       ],
-                      rowBuilder: (playlistList) => playlistList.map((playlist) {
+                      rowBuilder: (playlistList) =>
+                          playlistList.map((playlist) {
                         return DataRow(cells: [
                           DataCell(Text(playlist.id.toString())),
                           DataCell(Text(playlist.name)),
