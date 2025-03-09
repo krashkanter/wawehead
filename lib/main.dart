@@ -37,6 +37,7 @@ Future<void> main() async {
 
   await Hive.openBox<int>('homePage');
   await Hive.openBox<String>('playerPage');
+  await Hive.openBox<bool>('repeatState');
 
   runApp(const MyApp());
 }

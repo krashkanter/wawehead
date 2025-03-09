@@ -2,7 +2,7 @@ import "package:flutter/material.dart";
 import "package:wawehead/components/db.dart";
 
 class DbView extends StatefulWidget {
-  const DbView({super.key});
+  const DbView({Key? key}) : super(key: key);
 
   @override
   State<DbView> createState() => _DbViewState();
@@ -25,7 +25,7 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
     super.initState();
     _tabController = TabController(
       initialIndex: 0,
-      length: 6, // Updated for new tabs
+      length: 6, // six tabs
       vsync: this,
     );
     loadAllData();
@@ -84,33 +84,21 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
 
   // Mock data creation for testing
   Future<void> addMockSong() async {
-    // Create a mock artist first
-    final artistId = await dbms.insertArtist(
-        Artist(name: 'Artist ${artists.length + 1}')
-    );
-
-    // Create a mock album
-    final albumId = await dbms.insertAlbum(
-        Album(
-          title: 'Album ${albums.length + 1}',
-          artistId: artistId,
-          year: 2023,
-        )
-    );
-
-    // Create a song
-    final songId = await dbms.insertSong(
-        Song(
-          title: 'Song ${songs.length + 1}',
-          artistId: artistId,
-          albumId: albumId,
-          duration: 180, // 3 minutes
-          path: '/path/to/song${songs.length + 1}.mp3',
-          size: 5000000, // 5MB
-        )
-    );
-
-    // Refresh data
+    final artistId =
+    await dbms.insertArtist(Artist(name: 'Artist ${artists.length + 1}'));
+    final albumId = await dbms.insertAlbum(Album(
+      title: 'Album ${albums.length + 1}',
+      artistId: artistId,
+      year: 2023,
+    ));
+    await dbms.insertSong(Song(
+      title: 'Song ${songs.length + 1}',
+      artistId: artistId,
+      albumId: albumId,
+      duration: 180, // 3 minutes
+      path: '/path/to/song${songs.length + 1}.mp3',
+      size: 5000000, // 5MB
+    ));
     await loadAllData();
   }
 
@@ -126,28 +114,22 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
 
   Future<void> createMockPlaylist() async {
     if (songs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add songs first'))
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Add songs first')));
       return;
     }
-
-    final playlistId = await dbms.createPlaylist(
-        Playlist(name: 'Playlist ${playlists.length + 1}')
-    );
-
-    // Add first 3 songs (or fewer if not enough)
+    final playlistId = await dbms
+        .createPlaylist(Playlist(name: 'Playlist ${playlists.length + 1}'));
     final songsToAdd = songs.length > 3 ? 3 : songs.length;
     for (var i = 0; i < songsToAdd; i++) {
       await dbms.addSongToPlaylist(playlistId, songs[i].id!);
     }
-
     await loadPlaylists();
   }
 
   Future<void> deleteSong(int id) async {
     await dbms.deleteSong(id);
-    await loadAllData(); // Reload all since deletion affects multiple tables
+    await loadAllData(); // Reload all data since deletion might affect multiple tables
   }
 
   @override
@@ -156,239 +138,236 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // Helper method for building a DataTable within a horizontally scrollable container.
+  Widget buildDataTable<T>({
+    required List<T> data,
+    required List<DataColumn> columns,
+    required List<DataRow> Function(List<T> data) rowBuilder,
+  }) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: columns,
+        rows: rowBuilder(data),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Music Database"),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: "Songs"),
-            Tab(text: "Favorites"),
-            Tab(text: "Artists"),
-            Tab(text: "Albums"),
-            Tab(text: "Playlists"),
-            Tab(text: "Recently Played"),
-          ],
-          dividerColor: Colors.transparent,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          colors: [Colors.black, Colors.blue],
+          center: Alignment.topRight,
+          radius: 4,
+          stops: [0.2, 1],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // SONGS TAB
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton.icon(
-                  onPressed: addMockSong,
-                  icon: const Icon(Icons.add),
-                  label: const Text("Add Test Song"),
-                ),
-              ),
-              Expanded(
-                child: songs.isEmpty
-                    ? const Center(child: Text("No songs in database"))
-                    : ListView.builder(
-                  itemCount: songs.length,
-                  itemBuilder: (context, index) {
-                    final song = songs[index];
-                    return ListTile(
-                      leading: const Icon(Icons.music_note),
-                      title: Text(song.title),
-                      subtitle: Text(
-                          "ID: ${song.id} · Duration: ${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}"
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.favorite_border),
-                            onPressed: () => addToFavorites(song.id!),
-                            tooltip: "Add to favorites",
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => deleteSong(song.id!),
-                            tooltip: "Delete song",
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: const Text("Music Database"),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabs: const [
+              Tab(text: "Songs"),
+              Tab(text: "Favorites"),
+              Tab(text: "Artists"),
+              Tab(text: "Albums"),
+              Tab(text: "Playlists"),
+              Tab(text: "Recently Played"),
             ],
+            dividerColor: Colors.transparent,
           ),
-
-          // FAVORITES TAB
-          Column(
-            children: [
-              Expanded(
-                child: favoriteSongs.isEmpty
-                    ? const Center(child: Text("No favorite songs"))
-                    : ListView.builder(
-                  itemCount: favoriteSongs.length,
-                  itemBuilder: (context, index) {
-                    final song = favoriteSongs[index];
-                    return ListTile(
-                      leading: const Icon(Icons.favorite, color: Colors.red),
-                      title: Text(song.title),
-                      subtitle: Text(
-                          "ID: ${song.id} · Duration: ${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}"
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.favorite_outlined, color: Colors.red),
-                        onPressed: () => removeFromFavorites(song.id!),
-                        tooltip: "Remove from favorites",
-                      ),
-                    );
-                  },
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            // SONGS TAB
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: addMockSong,
+                    icon: const Icon(Icons.add),
+                    label: const Text("Add Test Song"),
+                  ),
                 ),
-              ),
-            ],
-          ),
-
-          // ARTISTS TAB
-          Column(
-            children: [
-              Expanded(
-                child: artists.isEmpty
-                    ? const Center(child: Text("No artists in database"))
-                    : ListView.builder(
-                  itemCount: artists.length,
-                  itemBuilder: (context, index) {
-                    final artist = artists[index];
-                    return ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(artist.name),
-                      subtitle: Text("ID: ${artist.id}"),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          // ALBUMS TAB
-          Column(
-            children: [
-              Expanded(
-                child: albums.isEmpty
-                    ? const Center(child: Text("No albums in database"))
-                    : ListView.builder(
-                  itemCount: albums.length,
-                  itemBuilder: (context, index) {
-                    final album = albums[index];
-                    return ListTile(
-                      leading: const Icon(Icons.album),
-                      title: Text(album.title),
-                      subtitle: Text(
-                          "ID: ${album.id} · Artist ID: ${album.artistId} · Year: ${album.year}"
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          // PLAYLISTS TAB
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton.icon(
-                  onPressed: createMockPlaylist,
-                  icon: const Icon(Icons.playlist_add),
-                  label: const Text("Create Test Playlist"),
-                ),
-              ),
-              Expanded(
-                child: playlists.isEmpty
-                    ? const Center(child: Text("No playlists in database"))
-                    : ListView.builder(
-                  itemCount: playlists.length,
-                  itemBuilder: (context, index) {
-                    final playlist = playlists[index];
-                    return ExpansionTile(
-                      leading: const Icon(Icons.playlist_play),
-                      title: Text(playlist.name),
-                      subtitle: Text("ID: ${playlist.id}"),
-                      children: [
-                        FutureBuilder<List<Song>>(
-                          future: dbms.getPlaylistSongs(playlist.id!),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
-                            }
-
-                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                              return const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text("No songs in this playlist"),
-                              );
-                            }
-
-                            return ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: snapshot.data!.length,
-                              itemBuilder: (context, songIndex) {
-                                final song = snapshot.data![songIndex];
-                                return ListTile(
-                                  leading: Text("${songIndex + 1}"),
-                                  title: Text(song.title),
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.only(left: 36.0, right: 16.0),
-                                );
-                              },
-                            );
-                          },
-                        ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: buildDataTable<Song>(
+                      data: songs,
+                      columns: const [
+                        DataColumn(label: Text("ID")),
+                        DataColumn(label: Text("Title")),
+                        DataColumn(label: Text("Duration")),
+                        DataColumn(label: Text("Actions")),
                       ],
-                    );
-                  },
+                      rowBuilder: (songList) => songList.map((song) {
+                        return DataRow(cells: [
+                          DataCell(Text(song.id.toString())),
+                          DataCell(Text(song.title)),
+                          DataCell(Text(
+                              "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
+                          DataCell(Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.favorite_border),
+                                onPressed: () => addToFavorites(song.id!),
+                                tooltip: "Add to favorites",
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () => deleteSong(song.id!),
+                                tooltip: "Delete song",
+                              ),
+                            ],
+                          )),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // RECENTLY PLAYED TAB
-          Column(
-            children: [
-              Expanded(
-                child: recentlyPlayed.isEmpty
-                    ? const Center(child: Text("No recently played songs"))
-                    : ListView.builder(
-                  itemCount: recentlyPlayed.length,
-                  itemBuilder: (context, index) {
-                    final song = recentlyPlayed[index];
-                    return ListTile(
-                      leading: const Icon(Icons.history),
-                      title: Text(song.title),
-                      subtitle: Text(
-                          "ID: ${song.id} · Duration: ${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}"
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.play_arrow),
-                        onPressed: () async {
-                          // Simulate playing a song
-                          await dbms.addToRecentlyPlayed(song.id!);
-                          await loadRecentlyPlayed();
-                        },
-                        tooltip: "Play again",
-                      ),
-                    );
-                  },
+            // FAVORITES TAB
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: buildDataTable<Song>(
+                      data: favoriteSongs,
+                      columns: const [
+                        DataColumn(label: Text("ID")),
+                        DataColumn(label: Text("Title")),
+                        DataColumn(label: Text("Duration")),
+                        DataColumn(label: Text("Actions")),
+                      ],
+                      rowBuilder: (favList) => favList.map((song) {
+                        return DataRow(cells: [
+                          DataCell(Text(song.id.toString())),
+                          DataCell(Text(song.title)),
+                          DataCell(Text(
+                              "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
+                          DataCell(IconButton(
+                            icon: const Icon(Icons.favorite_outlined,
+                                color: Colors.red),
+                            onPressed: () => removeFromFavorites(song.id!),
+                            tooltip: "Remove from favorites",
+                          )),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
                 ),
+              ],
+            ),
+
+            // ARTISTS TAB
+            SingleChildScrollView(
+              child: buildDataTable<Artist>(
+                data: artists,
+                columns: const [
+                  DataColumn(label: Text("ID")),
+                  DataColumn(label: Text("Name")),
+                ],
+                rowBuilder: (artistList) => artistList.map((artist) {
+                  return DataRow(cells: [
+                    DataCell(Text(artist.id.toString())),
+                    DataCell(Text(artist.name)),
+                  ]);
+                }).toList(),
               ),
-            ],
-          ),
-        ],
+            ),
+
+            // ALBUMS TAB
+            SingleChildScrollView(
+              child: buildDataTable<Album>(
+                data: albums,
+                columns: const [
+                  DataColumn(label: Text("ID")),
+                  DataColumn(label: Text("Title")),
+                  DataColumn(label: Text("Artist ID")),
+                  DataColumn(label: Text("Year")),
+                ],
+                rowBuilder: (albumList) => albumList.map((album) {
+                  return DataRow(cells: [
+                    DataCell(Text(album.id.toString())),
+                    DataCell(Text(album.title)),
+                    DataCell(Text(album.artistId.toString())),
+                    DataCell(Text(album.year.toString())),
+                  ]);
+                }).toList(),
+              ),
+            ),
+
+            // PLAYLISTS TAB
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: createMockPlaylist,
+                    icon: const Icon(Icons.playlist_add),
+                    label: const Text("Create Test Playlist"),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: buildDataTable<Playlist>(
+                      data: playlists,
+                      columns: const [
+                        DataColumn(label: Text("ID")),
+                        DataColumn(label: Text("Name")),
+                      ],
+                      rowBuilder: (playlistList) => playlistList.map((playlist) {
+                        return DataRow(cells: [
+                          DataCell(Text(playlist.id.toString())),
+                          DataCell(Text(playlist.name)),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // RECENTLY PLAYED TAB
+            SingleChildScrollView(
+              child: buildDataTable<Song>(
+                data: recentlyPlayed,
+                columns: const [
+                  DataColumn(label: Text("ID")),
+                  DataColumn(label: Text("Title")),
+                  DataColumn(label: Text("Duration")),
+                  DataColumn(label: Text("Actions")),
+                ],
+                rowBuilder: (songList) => songList.map((song) {
+                  return DataRow(cells: [
+                    DataCell(Text(song.id.toString())),
+                    DataCell(Text(song.title)),
+                    DataCell(Text(
+                        "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
+                    DataCell(IconButton(
+                      icon: const Icon(Icons.play_arrow),
+                      onPressed: () async {
+                        await dbms.addToRecentlyPlayed(song.id!);
+                        await loadRecentlyPlayed();
+                      },
+                      tooltip: "Play again",
+                    )),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

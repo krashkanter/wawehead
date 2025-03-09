@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import "package:flutter/material.dart";
+import 'package:hive_flutter/adapters.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:wawehead/components/metadata.dart';
 
 class PlayerPage extends StatefulWidget {
   final String? uri;
@@ -12,10 +16,11 @@ class PlayerPage extends StatefulWidget {
 
 class _PlayerPageState extends State<PlayerPage>
     with AutomaticKeepAliveClientMixin {
-  // final TextEditingController _videoId = TextEditingController();
   String songName = "";
   bool shuffleState = false;
-  int repeatState = 0;
+  bool likeState = false;
+  bool repeatState = false;
+  // Uint8List? albumArt;
   late var plr = AudioPlayer();
 
   @override
@@ -26,11 +31,8 @@ class _PlayerPageState extends State<PlayerPage>
       _startPlaying(widget.uri);
       songName = _getCleanFileName(widget.uri.toString());
     }
-  }
-
-  Future<void> ytd() async {
-    await plr.setUrl(
-        "content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2FKalimba.mp3");
+    // loadAlbumArt();
+    // repeatState = Hive.box<bool>('repeatState').get('repeatState')!;
   }
 
   Future<void> _startPlaying(String? uri) async {
@@ -49,9 +51,17 @@ class _PlayerPageState extends State<PlayerPage>
     }
   }
 
+  // Future<void> loadAlbumArt() async {
+  //   Uint8List? picture = await getArt(widget.uri.toString());
+  //   setState(() {
+  //     albumArt = picture;
+  //   });
+  // }
+
   @override
   void dispose() {
     plr.dispose(); // Dispose of the player when the widget is destroyed
+    // Hive.box<bool>('repeatState').put('repeatState', repeatState);
     super.dispose();
   }
 
@@ -68,20 +78,13 @@ class _PlayerPageState extends State<PlayerPage>
               padding: const EdgeInsets.only(top: 24.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(32),
-                child: Image.asset(
-                  "assets/icon/icon.png",
-                  fit: BoxFit.cover,
-                  height: MediaQuery.sizeOf(context).height / 3,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Center(
-              child: Text(
-                songName,
-                style: TextStyle(fontWeight: FontWeight.bold),
+                child: /*albumArt != null
+                    ? Image.memory(albumArt!)*/
+                /*:*/ Image.asset(
+                        "assets/icon/icon.png",
+                        fit: BoxFit.cover,
+                        height: MediaQuery.sizeOf(context).height / 3,
+                      ),
               ),
             ),
           ),
@@ -92,6 +95,17 @@ class _PlayerPageState extends State<PlayerPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        songName,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 40),
+                      ),
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -115,7 +129,18 @@ class _PlayerPageState extends State<PlayerPage>
                           );
                         },
                       ),
-                      IconButton(onPressed: () {}, icon: Icon(Icons.thumb_up_alt_rounded, color: Colors.blue.shade50,))
+                      IconButton(
+                          onPressed: () {
+                            setState(() {
+                              likeState ? likeState = false : likeState = true;
+                            });
+                          },
+                          icon: Icon(
+                            likeState
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: Colors.blue.shade50,
+                          ))
                     ],
                   ),
                   Row(
@@ -124,24 +149,24 @@ class _PlayerPageState extends State<PlayerPage>
                       IconButton(
                         onPressed: () {
                           setState(() {
-                            repeatState = (repeatState + 1) % 3;
-                            plr.setLoopMode(LoopMode.values[repeatState]);
+                            repeatState
+                                ? repeatState = false
+                                : repeatState = true;
+
+                            repeatState
+                                ? plr.setLoopMode(LoopMode.one)
+                                : plr.setLoopMode(LoopMode.off);
                           });
                         },
-                        icon: repeatState == 0
+                        icon: repeatState
                             ? Icon(
-                                Icons.repeat_rounded,
+                                Icons.repeat_one_on_rounded,
                                 color: Colors.blue.shade50,
                               )
-                            : repeatState == 1
-                                ? Icon(
-                                    Icons.repeat_on_rounded,
-                                    color: Colors.blue.shade50,
-                                  )
-                                : Icon(
-                                    Icons.repeat_one_on_rounded,
-                                    color: Colors.blue.shade50,
-                                  ),
+                            : Icon(
+                                Icons.repeat_rounded,
+                                color: Colors.blue.shade50,
+                              ),
                       ),
                       IconButton(
                         onPressed: () {

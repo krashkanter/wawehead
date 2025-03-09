@@ -5,6 +5,7 @@ import 'package:wawehead/main.dart';
 import 'package:wawehead/screens/player.dart';
 import 'package:wawehead/screens/library.dart';
 
+import '../components/refresh.dart';
 import 'db_view.dart';
 
 class HomePage extends StatefulWidget {
@@ -22,7 +23,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    currentPageIndex = 0; //Hive.box<int>('homePage').get(0) ?? 0;
+    currentPageIndex = 0; // Hive.box<int>('homePage').get(0) ?? 0;
   }
 
   @override
@@ -46,6 +47,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 if (kDebugMode) {
                   print(musicFiles?.childrenUriList);
                 }
+                await resetDatabase();
+                await importMusicFilesToDatabase();
               },
               icon: Icon(
                 Icons.refresh_rounded,

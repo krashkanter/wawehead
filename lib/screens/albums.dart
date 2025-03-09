@@ -11,7 +11,7 @@ class _AlbumsState extends State<Albums> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.purple,
+      color: Colors.transparent,
     );
   }
 }

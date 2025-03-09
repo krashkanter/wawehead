@@ -1,9 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:wawehead/components/audiotagger.dart';
 import 'package:wawehead/screens/home.dart';
-import 'package:wawehead/screens/player.dart';
 
 import '../main.dart';
 
@@ -18,7 +15,6 @@ class _AllSongsState extends State<AllSongs> {
   final List<Map<String, String>> _musicFiles =
       []; // List to store music file data
   bool _isLoading = true; // Track loading state
-
 
   @override
   void initState() {
@@ -37,7 +33,6 @@ class _AllSongsState extends State<AllSongs> {
         for (var uri in musicFiles!.childrenUriList.sublist(1)) {
           final decodedFileName = _getCleanFileName(uri.toString());
           _musicFiles.add({'uri': uri.toString(), 'name': decodedFileName});
-          getTag(uri.toString());
         }
       }
 
@@ -65,9 +60,13 @@ class _AllSongsState extends State<AllSongs> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
           : _musicFiles.isEmpty
-              ? const Center(child: Text("No music files found."))
+              ? const Center(
+                  child: Text("No music files found."),
+                )
               : ListView.builder(
                   itemCount: _musicFiles.length,
                   itemBuilder: (BuildContext context, int index) {
