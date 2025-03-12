@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
-import "package:wawehead/screens/albums.dart";
-import "package:wawehead/screens/all_songs.dart";
-import "package:wawehead/screens/favourites.dart";
-import "package:wawehead/screens/history.dart";
+import "package:wawehead/screens/library/albums.dart";
+import "package:wawehead/screens/library/all_songs.dart";
+import "package:wawehead/screens/library/favourites.dart";
+import "package:wawehead/screens/library/history.dart";
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});

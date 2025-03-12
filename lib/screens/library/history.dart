@@ -1,16 +1,16 @@
 import "package:flutter/material.dart";
 
-import "../components/db.dart";
-import "home.dart";
+import "../../components/db.dart";
+import "../home.dart";
 
-class Favourites extends StatefulWidget {
-  const Favourites({super.key});
+class History extends StatefulWidget {
+  const History({super.key});
 
   @override
-  State<Favourites> createState() => _FavouritesState();
+  State<History> createState() => _HistoryState();
 }
 
-class _FavouritesState extends State<Favourites> {
+class _HistoryState extends State<History> {
   final List<Song> _favourites = []; // List to store music file data
   final DBMS dbms = DBMS();
   bool _isLoading = true; // Track loading state
@@ -38,8 +38,11 @@ class _FavouritesState extends State<Favourites> {
               child: CircularProgressIndicator(),
             )
           : _favourites.isEmpty
-              ? const Center(
-                  child: Text("No music files found."),
+              ? Center(
+                  child: Text(
+                    "No history. \nTry listening to some songs",
+                    style: TextStyle(fontSize: 20, color: Colors.blue.shade50),
+                  ),
                 )
               : ListView.builder(
                   itemCount: _favourites.length,

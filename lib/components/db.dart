@@ -1,3 +1,4 @@
+import "package:flutter/foundation.dart";
 import "package:path/path.dart";
 import "package:sqflite/sqflite.dart";
 
@@ -311,6 +312,11 @@ class DBMS {
         LIMIT 50
       )
     ''');
+  }
+
+  Future<List<Map<String, Object?>>> executeQueries(String sql) async {
+    final db = await init();
+    return await db.rawQuery(sql);
   }
 
   Future<List<Song>> getRecentlyPlayed() async {

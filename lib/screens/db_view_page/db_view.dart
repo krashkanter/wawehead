@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:wawehead/components/db.dart";
-import "package:wawehead/screens/query.dart";
+import "package:wawehead/screens/db_view_page/query.dart";
+
+import "../../misc/reusable.dart";
 
 class DbView extends StatefulWidget {
   const DbView({super.key});
@@ -138,21 +140,6 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  // Helper method for building a DataTable within a horizontally scrollable container.
-  Widget buildDataTable<T>({
-    required List<T> data,
-    required List<DataColumn> columns,
-    required List<DataRow> Function(List<T> data) rowBuilder,
-  }) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: columns,
-        rows: rowBuilder(data),
-      ),
-    );
   }
 
   @override

@@ -9,26 +9,39 @@ Widget textFieldCustom(TextEditingController tf) {
       maxLines: 5,
       autofocus: true,
       decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.black,
-        border: InputBorder.none
-      ),
+          filled: true, fillColor: Colors.black, border: InputBorder.none),
       style: const TextStyle(color: Colors.white),
     ),
   );
 }
 
-Widget elevatedButtonCustom() {
+Widget elevatedButtonCustom(Function f) {
   return SizedBox(
     width: double.infinity, // Match TextField width
     child: ElevatedButton(
-      onPressed: () {},
+      onPressed: () {
+        f();
+      },
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.black, // Match TextField color
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.zero), // Remove border radius
       ),
       child: const Icon(Icons.check, color: Colors.white),
+    ),
+  );
+}
+
+Widget buildDataTable<T>({
+  required List<T> data,
+  required List<DataColumn> columns,
+  required List<DataRow> Function(List<T> data) rowBuilder,
+}) {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: DataTable(
+      columns: columns,
+      rows: rowBuilder(data),
     ),
   );
 }

@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:wawehead/misc/reusable.dart";
 
+import "../../components/db.dart";
+
 class QueryBuilderPage extends StatefulWidget {
   const QueryBuilderPage({super.key});
 
@@ -10,6 +12,15 @@ class QueryBuilderPage extends StatefulWidget {
 
 class _QueryBuilderPageState extends State<QueryBuilderPage> {
   final TextEditingController tf = TextEditingController();
+  final DBMS dbms = DBMS();
+  String queryResult = "Results will appear here"; // State variable
+
+  Future<void> execute() async {
+    final result = await dbms.executeQueries(tf.text);
+    setState(() {
+      queryResult = result.isNotEmpty ? result.toString() : "No results found";
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +44,12 @@ class _QueryBuilderPageState extends State<QueryBuilderPage> {
           child: Column(
             children: [
               textFieldCustom(tf),
-              elevatedButtonCustom()
+              elevatedButtonCustom(execute),
+              const SizedBox(height: 20),
+              Text(
+                queryResult,
+                style: const TextStyle(color: Colors.white),
+              ),
             ],
           ),
         ),

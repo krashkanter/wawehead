@@ -6,7 +6,7 @@ import 'package:wawehead/screens/player.dart';
 import 'package:wawehead/screens/library.dart';
 
 import '../components/refresh.dart';
-import 'db_view.dart';
+import 'db_view_page/db_view.dart';
 
 class HomePage extends StatefulWidget {
   final String? uri;

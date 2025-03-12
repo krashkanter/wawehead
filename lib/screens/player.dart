@@ -42,6 +42,12 @@ class _PlayerPageState extends State<PlayerPage>
     });
   }
 
+  Future<void> favHandler() async {
+    likeState
+        ? dbms.addToFavorites(widget.id!)
+        : dbms.removeFromFavorites(widget.id!);
+  }
+
   Future<void> _startPlaying(String? uri) async {
     try {
       if (plr.playing) {
@@ -122,10 +128,11 @@ class _PlayerPageState extends State<PlayerPage>
                         },
                       ),
                       IconButton(
-                          onPressed: () {
+                          onPressed: () async {
                             setState(() {
                               likeState ? likeState = false : likeState = true;
                             });
+                            favHandler();
                           },
                           icon: Icon(
                             likeState

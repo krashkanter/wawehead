@@ -62,6 +62,13 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.black,
           foregroundColor: Colors.blue.shade50,
         ),
+        dataTableTheme: DataTableThemeData(
+          dividerThickness: 2,
+          headingRowColor: WidgetStateProperty.all(Colors.black),
+          headingTextStyle: TextStyle(fontSize: 20),
+          dataRowColor: WidgetStateProperty.all(Colors.black.withAlpha(100)),
+          dataTextStyle: TextStyle(fontSize: 16, color: Colors.blue.shade50),
+        ),
         dividerTheme: const DividerThemeData(color: Colors.transparent),
       ),
       home: HomePage(),
