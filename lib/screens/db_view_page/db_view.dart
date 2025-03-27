@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:intl/intl.dart";
 import "package:wawehead/components/db.dart";
 import "package:wawehead/screens/db_view_page/query.dart";
 
@@ -202,19 +203,35 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                     child: buildDataTable<Song>(
                       data: songs,
                       columns: const [
-                        DataColumn(label: Text("ID")),
+                        DataColumn(label: Text("Id")),
                         DataColumn(label: Text("Title")),
+                        DataColumn(label: Text("ArtistId")),
                         DataColumn(label: Text("Duration")),
                         DataColumn(label: Text("Path")),
+                        DataColumn(label: Text("Size")),
+                        DataColumn(label: Text("DateAdded")),
+                        DataColumn(label: Text("PlayCount")),
                         DataColumn(label: Text("Actions")),
                       ],
                       rowBuilder: (songList) => songList.map((song) {
                         return DataRow(cells: [
                           DataCell(Text(song.id.toString())),
                           DataCell(Text(song.title)),
+                          DataCell(Text(song.artistId.toString())),
                           DataCell(Text(
                               "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
                           DataCell(Text(song.path)),
+                          DataCell(Text(song.size.toString())),
+                          DataCell(
+                            Text(
+                              song.dateAdded != null
+                                  ? DateFormat('yyyy-MM-dd').format(
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                          song.dateAdded!))
+                                  : 'N/A', // Handle null case
+                            ),
+                          ),
+                          DataCell(Text(song.playCount.toString())),
                           DataCell(Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -310,35 +327,23 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
             ),
 
             // PLAYLISTS TAB
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton.icon(
-                    onPressed: createMockPlaylist,
-                    icon: const Icon(Icons.playlist_add),
-                    label: const Text("Create Test Playlist"),
-                  ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: buildDataTable<Playlist>(
+                  data: playlists,
+                  columns: const [
+                    DataColumn(label: Text("ID")),
+                    DataColumn(label: Text("Name")),
+                  ],
+                  rowBuilder: (playlistList) =>
+                      playlistList.map((playlist) {
+                    return DataRow(cells: [
+                      DataCell(Text(playlist.id.toString())),
+                      DataCell(Text(playlist.name)),
+                    ]);
+                  }).toList(),
                 ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: buildDataTable<Playlist>(
-                      data: playlists,
-                      columns: const [
-                        DataColumn(label: Text("ID")),
-                        DataColumn(label: Text("Name")),
-                      ],
-                      rowBuilder: (playlistList) =>
-                          playlistList.map((playlist) {
-                        return DataRow(cells: [
-                          DataCell(Text(playlist.id.toString())),
-                          DataCell(Text(playlist.name)),
-                        ]);
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
 
             // RECENTLY PLAYED TAB
@@ -349,7 +354,6 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                   DataColumn(label: Text("ID")),
                   DataColumn(label: Text("Title")),
                   DataColumn(label: Text("Duration")),
-                  DataColumn(label: Text("Actions")),
                 ],
                 rowBuilder: (songList) => songList.map((song) {
                   return DataRow(cells: [
@@ -357,14 +361,6 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                     DataCell(Text(song.title)),
                     DataCell(Text(
                         "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
-                    DataCell(IconButton(
-                      icon: const Icon(Icons.play_arrow),
-                      onPressed: () async {
-                        await dbms.addToRecentlyPlayed(song.id!);
-                        await loadRecentlyPlayed();
-                      },
-                      tooltip: "Play again",
-                    )),
                   ]);
                 }).toList(),
               ),

@@ -53,10 +53,14 @@ class _AllSongsState extends State<AllSongs> {
                       ),
                       onTap: () {
                         final uri = _musicFiles.elementAt(index).path;
+                        final id = _musicFiles.elementAt(index).id;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => HomePage(uri: uri),
+                            builder: (context) => HomePage(
+                              uri: uri,
+                              id: id,
+                            ),
                           ),
                         );
                       },

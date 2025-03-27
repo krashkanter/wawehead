@@ -1,5 +1,5 @@
 import "package:flutter/material.dart";
-import "package:wawehead/screens/library/albums.dart";
+import "package:wawehead/screens/library/playlists.dart";
 import "package:wawehead/screens/library/all_songs.dart";
 import "package:wawehead/screens/library/favourites.dart";
 import "package:wawehead/screens/library/history.dart";
@@ -33,7 +33,7 @@ class _LibraryPageState extends State<LibraryPage>
             controller: _tabController,
             children: [
               Favourites(),
-              Albums(),
+              Playlists(),
               AllSongs(),
               History(),
             ],

@@ -1,18 +1,24 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:wawehead/main.dart';
 import 'package:wawehead/screens/player.dart';
 import 'package:wawehead/screens/library.dart';
 
+import '../components/db.dart';
 import '../components/refresh.dart';
 import 'db_view_page/db_view.dart';
 
 class HomePage extends StatefulWidget {
   final String? uri;
   final int? id;
+  final ConcatenatingAudioSource?
+      playlistAudioSource; // Accepts a playlist for gapless playback
+  final List<Song>? queue; // Accepts a list of songs to show as the queue
 
-  const HomePage({super.key, this.id, this.uri});
+  const HomePage(
+      {super.key, this.id, this.uri, this.playlistAudioSource, this.queue});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -113,7 +119,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: PlayerPage(id: widget.id, uri: widget.uri),
+              child: PlayerPage(
+                  id: widget.id,
+                  uri: widget.uri,
+                  playlistAudioSource: widget.playlistAudioSource,
+                  queue: widget.queue),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),

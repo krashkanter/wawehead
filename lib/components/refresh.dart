@@ -6,7 +6,7 @@ import '../main.dart';
 import 'db.dart';
 
 Future<List<Map<String, String>>> _fetchMusicFiles() async {
-  final List<Map<String, String>> _musicFiles = [];
+  final List<Map<String, String>> musicFiles0 = [];
   try {
     final musicFiles = await mediaStorePlugin.getDocumentTree(
       uriString:
@@ -16,11 +16,11 @@ Future<List<Map<String, String>>> _fetchMusicFiles() async {
     if (musicFiles?.childrenUriList != null) {
       for (var uri in musicFiles!.childrenUriList.sublist(1)) {
         final decodedFileName = _getCleanFileName(uri.toString());
-        _musicFiles.add({'uri': uri.toString(), 'name': decodedFileName});
+        musicFiles0.add({'uri': uri.toString(), 'name': decodedFileName});
       }
     }
 
-    return _musicFiles;
+    return musicFiles0;
   } catch (e) {
     if (kDebugMode) {
       print("Error fetching music files: $e");

@@ -11,7 +11,7 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
-  final List<Song> _favourites = []; // List to store music file data
+  final List<Song> _recents = []; // List to store music file data
   final DBMS dbms = DBMS();
   bool _isLoading = true; // Track loading state
 
@@ -22,9 +22,9 @@ class _HistoryState extends State<History> {
   }
 
   Future<void> loadSongs() async {
-    final songList = await dbms.getFavoriteSongs();
+    final songList = await dbms.getRecentlyPlayed();
     setState(() {
-      _favourites.addAll(songList);
+      _recents.addAll(songList);
       _isLoading = false;
     });
   }
@@ -37,7 +37,7 @@ class _HistoryState extends State<History> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : _favourites.isEmpty
+          : _recents.isEmpty
               ? Center(
                   child: Text(
                     "No history. \nTry listening to some songs",
@@ -45,7 +45,7 @@ class _HistoryState extends State<History> {
                   ),
                 )
               : ListView.builder(
-                  itemCount: _favourites.length,
+                  itemCount: _recents.length,
                   itemBuilder: (BuildContext context, int index) {
                     return ListTile(
                       leading: Icon(
@@ -53,11 +53,11 @@ class _HistoryState extends State<History> {
                         color: Colors.blue.shade50,
                       ),
                       title: Text(
-                        _favourites.elementAt(index).title,
+                        _recents.elementAt(index).title,
                       ),
                       onTap: () {
-                        final id = _favourites.elementAt(index).id;
-                        final uri = _favourites.elementAt(index).path;
+                        final id = _recents.elementAt(index).id;
+                        final uri = _recents.elementAt(index).path;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

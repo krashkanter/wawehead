@@ -1,4 +1,3 @@
-import "package:flutter/foundation.dart";
 import "package:path/path.dart";
 import "package:sqflite/sqflite.dart";
 
@@ -312,6 +311,8 @@ class DBMS {
         LIMIT 50
       )
     ''');
+
+    incrementPlayCount(songId);
   }
 
   Future<List<Map<String, Object?>>> executeQueries(String sql) async {
@@ -322,12 +323,18 @@ class DBMS {
   Future<List<Song>> getRecentlyPlayed() async {
     final db = await init();
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT s.* FROM songs s
-      INNER JOIN recently_played rp ON s.id = rp.song_id
-      ORDER BY rp.timestamp DESC
-    ''');
-
+    SELECT s.*, rp.timestamp FROM songs s
+    INNER JOIN recently_played rp ON s.id = rp.song_id
+    ORDER BY rp.timestamp DESC
+  ''');
     return List.generate(maps.length, (i) => Song.fromMap(maps[i]));
+  }
+
+  Future<void> incrementPlayCount(int songId) async {
+    final db = await init();
+    await db.execute('''
+      UPDATE songs SET play_count = play_count + 1 WHERE id = '${songId}';
+    ''');
   }
 }
 

@@ -70,6 +70,15 @@ class MyApp extends StatelessWidget {
           dataTextStyle: TextStyle(fontSize: 16, color: Colors.blue.shade50),
         ),
         dividerTheme: const DividerThemeData(color: Colors.transparent),
+        snackBarTheme: SnackBarThemeData(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          contentTextStyle: TextStyle(
+            color: Colors.blue.shade50,
+            fontSize: 20,
+            fontFamily: GoogleFonts.laila().fontFamily,
+          ),
+        ),
       ),
       home: HomePage(),
     );
