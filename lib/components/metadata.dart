@@ -34,3 +34,8 @@ Future<int> getDuration(String filePath) async {
 
   return metadata.duration?.inSeconds ?? 0;
 }
+
+Future<int> getSize(String filePath) async {
+  File track = await toFile(filePath);
+  return track.length();
+}

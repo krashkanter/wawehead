@@ -11,6 +11,7 @@ class AllSongs extends StatefulWidget {
 
 class _AllSongsState extends State<AllSongs> {
   final List<Song> _musicFiles = []; // List to store music file data
+  final List<Artist> _artists = []; // List to store artist data
   final DBMS dbms = DBMS();
   bool _isLoading = true; // Track loading state
 
@@ -18,6 +19,7 @@ class _AllSongsState extends State<AllSongs> {
   void initState() {
     super.initState();
     loadSongs();
+    loadArtists();
   }
 
   Future<void> loadSongs() async {
@@ -26,6 +28,22 @@ class _AllSongsState extends State<AllSongs> {
       _musicFiles.addAll(songList);
       _isLoading = false;
     });
+  }
+
+  Future<void> loadArtists() async {
+    final artistList = await dbms.getArtists();
+    setState(() {
+      _artists.addAll(artistList);
+    });
+  }
+
+  String _getArtistName(int artistId) {
+    final artist = _artists.firstWhere(
+      (artist) => artist.id == artistId,
+      orElse: () =>
+          Artist(id: -1, name: "Unknown Artist"), // Handle missing artist
+    );
+    return artist.name;
   }
 
   @override
@@ -43,23 +61,21 @@ class _AllSongsState extends State<AllSongs> {
               : ListView.builder(
                   itemCount: _musicFiles.length,
                   itemBuilder: (BuildContext context, int index) {
+                    final song = _musicFiles[index];
                     return ListTile(
                       leading: Icon(
                         Icons.music_note_rounded,
                         color: Colors.blue.shade50,
                       ),
-                      title: Text(
-                        _musicFiles.elementAt(index).title,
-                      ),
+                      title: Text(song.title),
+                      subtitle: Text(_getArtistName(song.artistId!)),
                       onTap: () {
-                        final uri = _musicFiles.elementAt(index).path;
-                        final id = _musicFiles.elementAt(index).id;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                             builder: (context) => HomePage(
-                              uri: uri,
-                              id: id,
+                              uri: song.path,
+                              id: song.id,
                             ),
                           ),
                         );

@@ -80,6 +80,7 @@ class _PlaylistEditorState extends State<PlaylistEditor> {
       builder: (context) {
         return StatefulBuilder(builder: (context, setStateDialog) {
           return AlertDialog(
+            backgroundColor: Colors.black,
             title: const Text("Add Songs"),
             content: SizedBox(
               width: double.maxFinite,
@@ -95,7 +96,7 @@ class _PlaylistEditorState extends State<PlaylistEditor> {
                       isSelected
                           ? Icons.check_box
                           : Icons.check_box_outline_blank,
-                      color: isSelected ? Colors.green : null,
+                      color: isSelected ? Colors.blue : null,
                     ),
                     onTap: () {
                       setStateDialog(() {

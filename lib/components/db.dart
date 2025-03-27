@@ -1,5 +1,6 @@
 import "package:path/path.dart";
 import "package:sqflite/sqflite.dart";
+import "package:wawehead/components/metadata.dart";
 
 class DBMS {
   Database? _db;

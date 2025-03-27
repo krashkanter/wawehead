@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:intl/intl.dart";
 import "package:wawehead/components/db.dart";
 import "package:wawehead/screens/db_view_page/query.dart";
@@ -86,27 +87,6 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
     });
   }
 
-  // Mock data creation for testing
-  Future<void> addMockSong() async {
-    final artistId =
-        await dbms.insertArtist(Artist(name: 'Artist ${artists.length + 1}'));
-    final albumId = await dbms.insertAlbum(Album(
-      title: 'Album ${albums.length + 1}',
-      artistId: artistId,
-      year: 2023,
-    ));
-    await dbms.insertSong(Song(
-      title: 'Song ${songs.length + 1}',
-      artistId: artistId,
-      albumId: albumId,
-      duration: 180,
-      // 3 minutes
-      path: '/path/to/song${songs.length + 1}.mp3',
-      size: 5000000, // 5MB
-    ));
-    await loadAllData();
-  }
-
   Future<void> addToFavorites(int songId) async {
     await dbms.addToFavorites(songId);
     await loadFavorites();
@@ -190,14 +170,6 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
             // SONGS TAB
             Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton.icon(
-                    onPressed: addMockSong,
-                    icon: const Icon(Icons.add),
-                    label: const Text("Add Test Song"),
-                  ),
-                ),
                 Expanded(
                   child: SingleChildScrollView(
                     child: buildDataTable<Song>(
@@ -221,7 +193,10 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                           DataCell(Text(
                               "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
                           DataCell(Text(song.path)),
-                          DataCell(Text(song.size.toString())),
+                          DataCell(
+                            Text(
+                                "${(song.size! / 1000000).toStringAsFixed(2)} MB"),
+                          ),
                           DataCell(
                             Text(
                               song.dateAdded != null
@@ -256,36 +231,39 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
             ),
 
             // FAVORITES TAB
-            Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: buildDataTable<Song>(
-                      data: favoriteSongs,
-                      columns: const [
-                        DataColumn(label: Text("ID")),
-                        DataColumn(label: Text("Title")),
-                        DataColumn(label: Text("Duration")),
-                        DataColumn(label: Text("Actions")),
-                      ],
-                      rowBuilder: (favList) => favList.map((song) {
-                        return DataRow(cells: [
-                          DataCell(Text(song.id.toString())),
-                          DataCell(Text(song.title)),
-                          DataCell(Text(
-                              "${(song.duration / 60).floor()}:${(song.duration % 60).toString().padLeft(2, '0')}")),
-                          DataCell(IconButton(
-                            icon: const Icon(Icons.favorite_outlined,
-                                color: Colors.red),
-                            onPressed: () => removeFromFavorites(song.id!),
-                            tooltip: "Remove from favorites",
-                          )),
-                        ]);
-                      }).toList(),
-                    ),
-                  ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: buildDataTable<Song>(
+                  data: favoriteSongs,
+                  columns: const [
+                    DataColumn(label: Text("ID")),
+                    DataColumn(label: Text("Title")),
+                    DataColumn(label: Text("DateAdded")),
+                    DataColumn(label: Text("Actions")),
+                  ],
+                  rowBuilder: (favList) => favList.map((song) {
+                    return DataRow(cells: [
+                      DataCell(Text(song.id.toString())),
+                      DataCell(Text(song.title)),
+                      DataCell(
+                        Text(
+                          song.dateAdded != null
+                              ? DateFormat('yyyy-MM-dd').format(
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                      song.dateAdded!))
+                              : 'N/A', // Handle null case
+                        ),
+                      ),
+                      DataCell(IconButton(
+                        icon: const Icon(Icons.favorite_outlined,
+                            color: Colors.red),
+                        onPressed: () => removeFromFavorites(song.id!),
+                        tooltip: "Remove from favorites",
+                      )),
+                    ]);
+                  }).toList(),
                 ),
-              ],
+              ),
             ),
 
             // ARTISTS TAB
@@ -335,8 +313,7 @@ class _DbViewState extends State<DbView> with TickerProviderStateMixin {
                     DataColumn(label: Text("ID")),
                     DataColumn(label: Text("Name")),
                   ],
-                  rowBuilder: (playlistList) =>
-                      playlistList.map((playlist) {
+                  rowBuilder: (playlistList) => playlistList.map((playlist) {
                     return DataRow(cells: [
                       DataCell(Text(playlist.id.toString())),
                       DataCell(Text(playlist.name)),

@@ -6,34 +6,40 @@ import '../main.dart';
 import 'db.dart';
 
 Future<List<Map<String, String>>> _fetchMusicFiles() async {
-  final List<Map<String, String>> musicFiles0 = [];
+  final List<Map<String, String>> musicFiles = [];
   try {
-    final musicFiles = await mediaStorePlugin.getDocumentTree(
+    final musicFiles0 = await mediaStorePlugin.getDocumentTree(
       uriString:
           "content://com.android.externalstorage.documents/tree/primary%3AMusic/",
     );
 
-    if (musicFiles?.childrenUriList != null) {
-      for (var uri in musicFiles!.childrenUriList.sublist(1)) {
-        final decodedFileName = _getCleanFileName(uri.toString());
-        musicFiles0.add({'uri': uri.toString(), 'name': decodedFileName});
+    if (musicFiles0?.childrenUriList != null) {
+      for (var uri in musicFiles0!.childrenUriList.sublist(1)) {
+        final uriString = uri.toString();
+        if (_isMusicFile(uriString)) {
+          final decodedFileName = _getCleanFileName(uriString);
+          musicFiles.add({'uri': uriString, 'name': decodedFileName});
+        }
       }
     }
 
-    return musicFiles0;
+    return musicFiles;
   } catch (e) {
     if (kDebugMode) {
       print("Error fetching music files: $e");
     }
+    return [];
   }
+}
 
-  return [];
+bool _isMusicFile(String uri) {
+  final supportedExtensions = ['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac'];
+  return supportedExtensions.any((ext) => uri.toLowerCase().endsWith(ext));
 }
 
 String _getCleanFileName(String uri) {
-  // Decode URI and extract the last part as the file name
-  final decodedUri = Uri.decodeComponent(uri.substring(0, uri.length - 4));
-  return decodedUri.split('/').last;
+  final decodedUri = Uri.decodeComponent(uri);
+  return decodedUri.split('/').last.replaceAll(RegExp(r'\.[^.]+$'), '');
 }
 
 Future<void> importMusicFilesToDatabase() async {
@@ -48,34 +54,38 @@ Future<void> importMusicFilesToDatabase() async {
   }
 
   int importedCount = 0;
+  int updatedCount = 0;
 
   for (var musicFile in musicFiles) {
     try {
       final String uri = musicFile['uri'] ?? '';
       final String name = musicFile['name'] ?? 'Unknown';
+
+      // Check if song already exists in database
+      final existingSongs =
+          await dbms.executeQueries("SELECT * FROM songs WHERE path = '$uri'");
+
+      if (existingSongs.isNotEmpty) {
+        // Song exists, update its metadata
+        final songId = existingSongs.first['id'] as int;
+        await updateSongMetadata(songId, uri);
+        updatedCount++;
+        continue;
+      }
+
+      // Fetch metadata
       final duration = await getDuration(uri) ?? 0;
-      // Create a default artist entry if we don't have metadata yet
-      final defaultArtistId =
-          await dbms.insertArtist(Artist(name: 'Unknown Artist'));
+      final artistName = await _getOrCreateArtist(dbms, uri);
+      final albumName = await _getOrCreateAlbum(dbms, uri, artistName);
 
-      // Create a default album entry
-      final defaultAlbumId = await dbms.insertAlbum(Album(
-        title: 'Unknown Album',
-        artistId: defaultArtistId,
-        year: DateTime.now().year,
-      ));
-
-      // Insert the song with basic information
-      // We can update metadata later
+      // Insert the song with extracted metadata
       final songId = await dbms.insertSong(Song(
         title: name,
-        artistId: defaultArtistId,
-        albumId: defaultAlbumId,
+        artistId: artistName['id'],
+        albumId: albumName['id'],
         duration: duration,
-        // We'll update this with metadata later
         path: uri,
-        size: 0,
-        // We'll update this with metadata later
+        size: await getSize(uri),
         dateAdded: DateTime.now().millisecondsSinceEpoch,
       ));
 
@@ -92,72 +102,92 @@ Future<void> importMusicFilesToDatabase() async {
   }
 
   if (kDebugMode) {
-    print("Import complete. Added $importedCount songs to database");
+    print(
+        "Import complete. Added $importedCount songs, updated $updatedCount songs");
   }
 }
 
-// Function to extract and update song metadata
-// Call this after importing songs to enhance their information
-Future<void> updateSongMetadata(int songId) async {
+Future<Map<String, dynamic>> _getOrCreateArtist(
+    DBMS dbms, String filePath) async {
+  try {
+    final artistName = await getArtist(filePath);
+    final artists = await dbms.getArtists();
+
+    final existingArtist = artists.firstWhere(
+        (a) => a.name.toLowerCase() == artistName.toLowerCase(),
+        orElse: () => Artist(name: 'Unknown Artist'));
+
+    if (existingArtist.id == null) {
+      // Create new artist if not found
+      final artistId = await dbms.insertArtist(Artist(name: artistName));
+      return {'id': artistId, 'name': artistName};
+    }
+
+    return {'id': existingArtist.id!, 'name': existingArtist.name};
+  } catch (e) {
+    // Fallback to Unknown Artist
+    final defaultArtistId =
+        await dbms.insertArtist(Artist(name: 'Unknown Artist'));
+    return {'id': defaultArtistId, 'name': 'Unknown Artist'};
+  }
+}
+
+Future<Map<String, dynamic>> _getOrCreateAlbum(
+    DBMS dbms, String filePath, Map<String, dynamic> artist) async {
+  try {
+    // You might want to extract album name from metadata
+    final albumName = 'Unknown Album';
+    final year = DateTime.now().year;
+
+    final albums = await dbms.getAlbums();
+
+    final existingAlbum = albums.firstWhere(
+        (a) =>
+            a.title.toLowerCase() == albumName.toLowerCase() &&
+            a.artistId == artist['id'],
+        orElse: () => Album(title: 'Unknown Album', artistId: artist['id']));
+
+    if (existingAlbum.id == null) {
+      // Create new album if not found
+      final albumId = await dbms.insertAlbum(Album(
+        title: albumName,
+        artistId: artist['id'],
+        year: year,
+      ));
+      return {'id': albumId, 'title': albumName};
+    }
+
+    return {'id': existingAlbum.id!, 'title': existingAlbum.title};
+  } catch (e) {
+    // Fallback to Unknown Album
+    final defaultAlbumId = await dbms.insertAlbum(Album(
+      title: 'Unknown Album',
+      artistId: artist['id'],
+      year: DateTime.now().year,
+    ));
+    return {'id': defaultAlbumId, 'title': 'Unknown Album'};
+  }
+}
+
+Future<void> updateSongMetadata(int songId, String filePath) async {
   final DBMS dbms = DBMS();
 
   try {
-    // Get the song from database
     final song = await dbms.getSong(songId);
     if (song == null) return;
 
-    // Here you would use a metadata extraction library like
-    // flutter_media_metadata, just_audio, or audio_service
-    // to extract metadata from the file at song.path
-
-    // Example with a hypothetical metadata extractor:
-    // final metadata = await MetadataRetriever.fromFile(song.path);
-
-    // For now, we'll simulate with placeholder logic
-    int durationInSeconds = 180; // 3 minutes placeholder
-    String artistName = 'Unknown Artist';
-    String albumName = 'Unknown Album';
-    int year = 2023;
-
-    // Find or create the artist
-    int artistId;
-    final artists = await dbms.getArtists();
-    final existingArtist = artists.where((a) => a.name == artistName).toList();
-
-    if (existingArtist.isNotEmpty) {
-      artistId = existingArtist.first.id!;
-    } else {
-      artistId = await dbms.insertArtist(Artist(name: artistName));
-    }
-
-    // Find or create the album
-    int albumId;
-    final albums = await dbms.getAlbums();
-    final existingAlbum = albums
-        .where((a) => a.title == albumName && a.artistId == artistId)
-        .toList();
-
-    if (existingAlbum.isNotEmpty) {
-      albumId = existingAlbum.first.id!;
-    } else {
-      albumId = await dbms.insertAlbum(Album(
-        title: albumName,
-        artistId: artistId,
-        year: year,
-      ));
-    }
+    final artistName = await _getOrCreateArtist(dbms, filePath);
 
     // Update the song with metadata
     await dbms.updateSong(Song(
       id: song.id,
-      title: song.title,
-      // Keep original or update from metadata
-      artistId: artistId,
-      albumId: albumId,
-      duration: durationInSeconds,
+      title: await getTitle(filePath) ?? song.title,
+      artistId: artistName['id'],
+      albumId: song.albumId,
+      // Keep existing album for now
+      duration: await getDuration(filePath),
       path: song.path,
-      size: song.size,
-      // Can be updated if you get file size
+      size: await getSize(filePath),
       dateAdded: song.dateAdded,
       playCount: song.playCount,
     ));
@@ -174,7 +204,7 @@ Future<void> updateAllSongsMetadata() async {
   final songs = await dbms.getSongs();
 
   for (var song in songs) {
-    await updateSongMetadata(song.id!);
+    await updateSongMetadata(song.id!, song.path);
   }
 
   if (kDebugMode) {

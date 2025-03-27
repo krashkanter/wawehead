@@ -36,20 +36,14 @@ class _PlayerPageState extends State<PlayerPage>
   @override
   void initState() {
     super.initState();
-    _checkFavorite();
+    _checkFavorite(); // Initial check if not in playlist mode
 
-    // Dispose of any existing player before creating a new one
-    try {
-      plr.dispose();
-    } catch (e) {
-      // Handle error as needed
-    }
     plr = AudioPlayer();
 
     if (widget.playlistAudioSource != null) {
       _startPlayingPlaylist(widget.playlistAudioSource!);
 
-      // Track song changes and add to recently played
+      // Listen to song change and update favorite state
       plr.currentIndexStream.listen((index) {
         if (index != null &&
             widget.queue != null &&
@@ -57,6 +51,7 @@ class _PlayerPageState extends State<PlayerPage>
           final currentSong = widget.queue![index];
           if (currentSong.id != null) {
             dbms.addToRecentlyPlayed(currentSong.id!);
+            _checkFavoriteForSong(currentSong.id!);
           }
         }
       });
@@ -67,6 +62,13 @@ class _PlayerPageState extends State<PlayerPage>
         dbms.addToRecentlyPlayed(widget.id!);
       }
     }
+  }
+
+  Future<void> _checkFavoriteForSong(int songId) async {
+    bool isFavorite = await dbms.isFavorite(songId);
+    setState(() {
+      likeState = isFavorite;
+    });
   }
 
   @override
@@ -84,13 +86,24 @@ class _PlayerPageState extends State<PlayerPage>
   }
 
   Future<void> _toggleFavorite() async {
+    final currentIndex = plr.currentIndex;
+    if (currentIndex == null ||
+        widget.queue == null ||
+        currentIndex >= widget.queue!.length) {
+      return;
+    }
+
+    final currentSong = widget.queue![currentIndex];
+    if (currentSong.id == null) return;
+
     setState(() {
       likeState = !likeState;
     });
+
     if (likeState) {
-      await dbms.addToFavorites(widget.id!);
+      await dbms.addToFavorites(currentSong.id!);
     } else {
-      await dbms.removeFromFavorites(widget.id!);
+      await dbms.removeFromFavorites(currentSong.id!);
     }
   }
 
@@ -182,7 +195,7 @@ class _PlayerPageState extends State<PlayerPage>
                   if (widget.uri != null)
                     Padding(
                       padding: const EdgeInsets.only(left: 16.0),
-                      child: Align (
+                      child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
                           songName,
