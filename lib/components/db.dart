@@ -1,6 +1,5 @@
 import "package:path/path.dart";
 import "package:sqflite/sqflite.dart";
-import "package:wawehead/components/metadata.dart";
 
 class DBMS {
   Database? _db;
@@ -10,104 +9,88 @@ class DBMS {
 
     _db = await openDatabase(
       join(await getDatabasesPath(), 'wawehead.db'),
+      version: 1,
+      onConfigure: (db) async {
+        // Enable foreign key constraints
+        await db.execute("PRAGMA foreign_keys = ON");
+      },
       onCreate: (db, version) async {
         // Create Artists table
         await db.execute('''
-          CREATE TABLE artists(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            image_path TEXT
-          )
-        ''');
-
+        CREATE TABLE artists(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          image_path TEXT
+        )
+      ''');
         // Create Albums table
         await db.execute('''
-          CREATE TABLE albums(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            artist_id INTEGER,
-            year INTEGER,
-            cover_art_path TEXT,
-            FOREIGN KEY (artist_id) REFERENCES artists(id)
-          )
-        ''');
-
-        // Create songs table with expanded fields
+        CREATE TABLE albums(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          artist_id INTEGER,
+          year INTEGER,
+          cover_art_path TEXT,
+          FOREIGN KEY (artist_id) REFERENCES artists(id)
+        )
+      ''');
+        // Create songs table
         await db.execute('''
-          CREATE TABLE songs(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            artist_id INTEGER,
-            album_id INTEGER,
-            duration INTEGER NOT NULL, 
-            path TEXT NOT NULL,
-            size INTEGER,
-            date_added INTEGER,
-            play_count INTEGER DEFAULT 0,
-            FOREIGN KEY (artist_id) REFERENCES artists(id),
-            FOREIGN KEY (album_id) REFERENCES albums(id)
-          )
-        ''');
-
-        // Create favourites table
+        CREATE TABLE songs(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          artist_id INTEGER,
+          album_id INTEGER,
+          duration INTEGER NOT NULL, 
+          path TEXT NOT NULL,
+          size INTEGER,
+          date_added INTEGER,
+          play_count INTEGER DEFAULT 0,
+          FOREIGN KEY (artist_id) REFERENCES artists(id),
+          FOREIGN KEY (album_id) REFERENCES albums(id)
+        )
+      ''');
+        // Create favorites table
         await db.execute('''
-          CREATE TABLE favorites(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            song_id INTEGER NOT NULL,
-            date_added INTEGER NOT NULL,
-            FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-          )
-        ''');
-
+        CREATE TABLE favorites(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          song_id INTEGER NOT NULL,
+          date_added INTEGER NOT NULL,
+          FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+        )
+      ''');
         // Create playlists table
         await db.execute('''
-          CREATE TABLE playlists(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            date_created INTEGER,
-            date_modified INTEGER,
-            cover_image TEXT
-          )
-        ''');
-
+        CREATE TABLE playlists(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT UNIQUE NOT NULL,
+          date_created INTEGER,
+          date_modified INTEGER,
+          cover_image TEXT
+        )
+      ''');
         // Create playlist_songs table
         await db.execute('''
-          CREATE TABLE playlist_songs(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            playlist_id INTEGER NOT NULL,
-            song_id INTEGER NOT NULL,
-            position INTEGER NOT NULL,
-            date_added INTEGER,
-            FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
-            FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-          )
-        ''');
-
+        CREATE TABLE playlist_songs(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          playlist_id INTEGER NOT NULL,
+          song_id INTEGER NOT NULL,
+          position INTEGER NOT NULL,
+          date_added INTEGER,
+          FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+          FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+        )
+      ''');
         // Create recently_played table
         await db.execute('''
-          CREATE TABLE recently_played(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            song_id INTEGER NOT NULL,
-            timestamp INTEGER NOT NULL,
-            FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
-          )
-        ''');
-
-        // Create settings table
-        await db.execute('''
-          CREATE TABLE settings(
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            theme TEXT DEFAULT 'light',
-            equalizer_settings TEXT,
-            crossfade_duration INTEGER DEFAULT 0,
-            gapless_playback INTEGER DEFAULT 0,
-            last_played_song_id INTEGER,
-            last_position INTEGER,
-            FOREIGN KEY (last_played_song_id) REFERENCES songs(id)
-          )
-        ''');
+        CREATE TABLE recently_played(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          song_id INTEGER NOT NULL,
+          timestamp INTEGER NOT NULL,
+          FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+        )
+      ''');
       },
-      version: 1,
     );
     return _db!;
   }
@@ -239,6 +222,7 @@ class DBMS {
   // PLAYLIST OPERATIONS
   Future<int> createPlaylist(Playlist playlist) async {
     final db = await init();
+
     return await db.insert('playlists', playlist.toMap());
   }
 
@@ -336,6 +320,20 @@ class DBMS {
     await db.execute('''
       UPDATE songs SET play_count = play_count + 1 WHERE id = '${songId}';
     ''');
+  }
+
+  Future<void> removePlaylist(int playlistId) async {
+    final db = await init();
+    await db.delete(
+      'playlists',
+      where: 'id = ?',
+      whereArgs: [playlistId],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getPlaylistSongsTable() async {
+    final db = await init();
+    return await db.query('playlist_songs');
   }
 }
 

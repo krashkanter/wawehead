@@ -1,5 +1,4 @@
 import "package:flutter/material.dart";
-
 import "../../components/db.dart";
 import "../home.dart";
 
@@ -15,6 +14,7 @@ class Favourites extends StatefulWidget {
 
 class _FavouritesState extends State<Favourites> with RouteAware {
   final List<Song> _favourites = [];
+  final List<Artist> _artists = [];
   final DBMS dbms = DBMS();
   bool _isLoading = true;
 
@@ -22,6 +22,7 @@ class _FavouritesState extends State<Favourites> with RouteAware {
   void initState() {
     super.initState();
     loadSongs();
+    loadArtists();
   }
 
   @override
@@ -50,10 +51,36 @@ class _FavouritesState extends State<Favourites> with RouteAware {
     });
   }
 
+  Future<void> loadArtists() async {
+    final artistsList = await dbms.getArtists();
+    setState(() {
+      _artists.clear();
+      _artists.addAll(artistsList);
+      _isLoading = false;
+    });
+  }
+
+  // Refresh both favorites and artists
+  Future<void> _refreshData() async {
+    await loadSongs();
+    await loadArtists();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const Text("Favourites"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshData,
+            tooltip: "Refresh",
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
@@ -68,14 +95,17 @@ class _FavouritesState extends State<Favourites> with RouteAware {
               : ListView.builder(
                   itemCount: _favourites.length,
                   itemBuilder: (BuildContext context, int index) {
+                    // Ensure we don't go out-of-bounds for the _artists list
+                    final artistName = index < _artists.length
+                        ? _artists[index].name
+                        : "Unknown Artist";
                     return ListTile(
                       leading: Icon(
                         Icons.music_note_rounded,
                         color: Colors.blue.shade50,
                       ),
-                      title: Text(
-                        _favourites[index].title,
-                      ),
+                      title: Text(_favourites[index].title),
+                      subtitle: Text(artistName),
                       onTap: () {
                         final id = _favourites[index].id;
                         final uri = _favourites[index].path;

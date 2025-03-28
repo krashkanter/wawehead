@@ -156,6 +156,17 @@ class _PlaylistEditorState extends State<PlaylistEditor> {
               icon: const Icon(Icons.save),
               onPressed: updatePlaylistName,
             ),
+            IconButton(
+                onPressed: () {
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () async {
+                      await dbms.removePlaylist(widget.playlist.id!);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+                icon: Icon(Icons.delete))
           ],
         ),
         backgroundColor: Colors.transparent,

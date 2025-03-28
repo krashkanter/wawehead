@@ -20,11 +20,21 @@ class _PlaylistsState extends State<Playlists> {
   List<Playlist> createdPlaylists = [];
   bool isPlaylistLoading = true;
 
+  // Persistent controller for the playlist name TextField.
+  late final TextEditingController _playlistController;
+
   @override
   void initState() {
     super.initState();
+    _playlistController = TextEditingController();
     loadSongs();
     loadPlaylists();
+  }
+
+  @override
+  void dispose() {
+    _playlistController.dispose();
+    super.dispose();
   }
 
   Future<void> loadSongs() async {
@@ -46,13 +56,13 @@ class _PlaylistsState extends State<Playlists> {
   }
 
   Future<void> createPlaylist() async {
+    // Ensure a valid playlist name and at least one song is selected.
     if (playlistName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a playlist name')),
       );
       return;
     }
-
     if (selectedSongs.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one song')),
@@ -60,8 +70,10 @@ class _PlaylistsState extends State<Playlists> {
       return;
     }
 
+    // Create the playlist
     final playlistId = await dbms.createPlaylist(Playlist(name: playlistName));
 
+    // Add the selected songs to the playlist
     for (var song in selectedSongs) {
       await dbms.addSongToPlaylist(playlistId, song.id!);
     }
@@ -70,9 +82,11 @@ class _PlaylistsState extends State<Playlists> {
       SnackBar(content: Text('Playlist "$playlistName" created successfully')),
     );
 
+    // Clear the playlist name and selected songs
     setState(() {
       playlistName = "";
       selectedSongs = [];
+      _playlistController.clear();
     });
 
     // Refresh the created playlists list
@@ -95,6 +109,12 @@ class _PlaylistsState extends State<Playlists> {
       appBar: AppBar(
         title: const Text("Playlists"),
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: loadSongs, // Refreshes the song list
+          ),
+        ],
       ),
       backgroundColor: Colors.transparent,
       body: isLoading
@@ -106,13 +126,14 @@ class _PlaylistsState extends State<Playlists> {
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: TextField(
+                      controller: _playlistController,
                       decoration: const InputDecoration(
                         labelText: 'Playlist Name',
                         border: OutlineInputBorder(),
                       ),
-                      onChanged: (value) =>
-                          setState(() => playlistName = value),
-                      controller: TextEditingController(text: playlistName),
+                      onChanged: (value) {
+                        setState(() => playlistName = value);
+                      },
                     ),
                   ),
                   ElevatedButton(
@@ -130,26 +151,29 @@ class _PlaylistsState extends State<Playlists> {
                       ),
                     ),
                   ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: songs.length,
-                    itemBuilder: (context, index) {
-                      final song = songs[index];
-                      final isSelected =
-                          selectedSongs.any((s) => s.id == song.id);
-                      return ListTile(
-                        title: Text(song.title),
-                        subtitle: Text("Duration: ${song.duration} sec"),
-                        trailing: Icon(
-                          isSelected
-                              ? Icons.check_circle
-                              : Icons.add_circle_outline,
-                          color: isSelected ? Colors.green : Colors.grey,
-                        ),
-                        onTap: () => toggleSongSelection(song),
-                      );
-                    },
+                  RefreshIndicator(
+                    onRefresh: loadSongs,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: songs.length,
+                      itemBuilder: (context, index) {
+                        final song = songs[index];
+                        final isSelected =
+                            selectedSongs.any((s) => s.id == song.id);
+                        return ListTile(
+                          title: Text(song.title),
+                          subtitle: Text("Duration: ${song.duration} sec"),
+                          trailing: Icon(
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.add_circle_outline,
+                            color: isSelected ? Colors.green : Colors.grey,
+                          ),
+                          onTap: () => toggleSongSelection(song),
+                        );
+                      },
+                    ),
                   ),
                   const Divider(),
                   // Created Playlists Section
@@ -206,9 +230,6 @@ class _PlaylistsState extends State<Playlists> {
                                         ConcatenatingAudioSource(
                                             children: audioSources);
 
-                                    // Stop any existing playback before starting a new playlist
-                                    // You might want to pass a global AudioPlayer or use a state management solution
-                                    // For now, we'll navigate and start a new player
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
@@ -224,8 +245,9 @@ class _PlaylistsState extends State<Playlists> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => PlaylistEditor(
-                                              playlist: playlist)),
+                                        builder: (context) =>
+                                            PlaylistEditor(playlist: playlist),
+                                      ),
                                     ).then((_) {
                                       // Refresh playlists after returning from the editor
                                       loadPlaylists();
